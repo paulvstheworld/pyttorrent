@@ -5,7 +5,7 @@ import hashlib
 PEER_ID = '-HS0001-123456789027'
 
 class TorrentFile(object):
-    def __init__(self, filepath):
+    def __init__(self, filepath, peer_id):
         self.filepath = filepath
         
         self.title = ''
@@ -18,6 +18,8 @@ class TorrentFile(object):
         
         self.filename = ''
         self.files = []
+        
+        self.peer_id = peer_id
         
     def get_decoded_info(self):
         f = open(self.filepath, 'rb') # read file in binary mode
@@ -48,11 +50,11 @@ class TorrentFile(object):
             file_length += file.get('length', 0)
             
         return file_length
-
+        
         
     def get_tracker_request_qs(self):
         return urlencode({
-            'peer_id': PEER_ID,
+            'peer_id': self.peer_id,
             'info_hash': self.get_info_hash().digest(),
             'left': self.get_total_file_length(),
         })

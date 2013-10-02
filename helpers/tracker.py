@@ -2,13 +2,15 @@ import bencode
 import struct
 import urllib2
 
+from peer import Peer, PeerCollection
+
 BLOCK_SIZE = 6
 
 class Tracker(object):
     def __init__(self, requesturl):
         self.requesturl = requesturl
         self.decoded_response = None
-        self.peers_list = []
+        self.peers = PeerCollection()
     
     def get_response(self):
         response = urllib2.urlopen(self.requesturl).read()
@@ -20,13 +22,16 @@ class Tracker(object):
         peers = self.decoded_response['peers']
         return not isinstance(peers, list)    
     
+    def set_peers(self, peers_list):
+        for peer_obj in peers_list:
+            peer = Peer(peer_obj['ip'], peer_obj['port'])
+            self.peers.add(peer)
     
     def get_peers_list(self):
         if not self.has_binary_peers():
             return self.decoded_response['peers']
         
         return self.get_binary_peers_list()
-    
     
     def get_binary_peers_list(self):
         peers_list = []
@@ -46,6 +51,8 @@ class Tracker(object):
             
             # increment index start by the next block size
             index_start += BLOCK_SIZE
+            
+        return peers_list
     
     
     def get_peer_ipaddress(self, bytes):
@@ -66,4 +73,3 @@ class Tracker(object):
             'ip': self.get_peer_ipaddress(block[0:4]),
             'port': self.get_peer_port(block[4:])
         }
-        
