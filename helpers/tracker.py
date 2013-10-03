@@ -22,16 +22,19 @@ class Tracker(object):
         peers = self.decoded_response['peers']
         return not isinstance(peers, list)    
     
-    def set_peers(self, peers_list):
+    
+    def add_peers(self, peers_list):
         for peer_obj in peers_list:
             peer = Peer(peer_obj['ip'], peer_obj['port'])
             self.peers.add(peer)
+    
     
     def get_peers_list(self):
         if not self.has_binary_peers():
             return self.decoded_response['peers']
         
         return self.get_binary_peers_list()
+    
     
     def get_binary_peers_list(self):
         peers_list = []
