@@ -1,11 +1,10 @@
+from hashlib import sha1
+
 from bencode import bdecode, bencode
 from urllib import urlencode
-import hashlib
 
-PEER_ID = '-HS0001-123456789027'
-PSTRLEN = '\x13'
-PSTR = 'BitTorrent protocol'
-RESERVED = '\x00'
+from helpers.handshake import PEER_ID
+
 
 class TorrentFile(object):
     def __init__(self, filepath):
@@ -23,7 +22,7 @@ class TorrentFile(object):
     
     
     def get_info_hash(self):
-        return hashlib.sha1(bencode(self.info))
+        return sha1(bencode(self.info))
     
     
     def get_total_file_length(self):
@@ -46,11 +45,6 @@ class TorrentFile(object):
     def get_tracker_request_url(self):
         qs = self.get_tracker_request_qs()
         return '?'.join([self.announce, qs])
-    
-    
-    def get_handshake(self):
-        # handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
-        return "%s%s%s%s%s" % (PSTRLEN, PSTR, RESERVED, self.get_info_hash().digest(), PEER_ID) 
     
     
     def __str__(self):

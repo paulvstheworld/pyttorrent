@@ -6,17 +6,20 @@ from peer import Peer, PeerCollection
 
 BLOCK_SIZE = 6
 
+
 class Tracker(object):
-    def __init__(self, requesturl):
+    def __init__(self, requesturl, handshake):
         self.requesturl = requesturl
         self.decoded_response = None
         self.peers = PeerCollection()
+        self.handshake = handshake
+    
     
     def get_response(self):
         response = urllib2.urlopen(self.requesturl).read()
         self.decoded_response = bencode.bdecode(response)
         return self.decoded_response
-    
+        
         
     def has_binary_peers(self):
         peers = self.decoded_response['peers']
@@ -25,7 +28,7 @@ class Tracker(object):
     
     def add_peers(self, peers_list):
         for peer_obj in peers_list:
-            peer = Peer(peer_obj['ip'], peer_obj['port'])
+            peer = Peer(peer_obj['ip'], peer_obj['port'], self.handshake)
             self.peers.add(peer)
     
     
