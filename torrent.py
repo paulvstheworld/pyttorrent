@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+import argparse
 import bencode
 import os
+import sys
 import urllib2
+
 from helpers.torrentfile import TorrentFile
 from helpers.tracker import Tracker
 from helpers.handshake import get_handshake, unpack_handshake
@@ -11,10 +14,18 @@ filepath = '/sandbox/hackerschool/related_assets'
 filename = 'how_to_start_working_as_freelance_web_designer.torrent'
 
 def main():
-    file = os.path.join(filepath, filename)
+    
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('-f', '--file',
+                        required=True,
+                        dest = 'file',
+                        type = argparse.FileType('r'))
+    
+    args = parser.parse_args()
+    filename = os.path.abspath(args.file.name)
     
     # get torrent file data
-    torrentfile = TorrentFile(file)
+    torrentfile = TorrentFile(filename)
     digested_info_hash = torrentfile.get_info_hash().digest()
     url = torrentfile.get_tracker_request_url()
     handshake = get_handshake(digested_info_hash)
