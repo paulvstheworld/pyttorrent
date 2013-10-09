@@ -35,8 +35,6 @@ def main():
     file = open(downloading_file, 'wb')
     f.write(bin_data)
     """
-    import ipdb
-    ipdb.set_trace()
     
     
     
