@@ -23,7 +23,7 @@ def main():
     
     # get torrent file data
     torrentfile = TorrentFile(filename)
-    info_hash = torrentfile.get_info_hash().digest()
+    info_hash = torrentfile.info_hash
     url = torrentfile.get_tracker_request_url()
     pieces = torrentfile.pieces
     
@@ -40,8 +40,8 @@ def main():
     
     
     # client_handshake
-    client_handshake = HandShake(info_hash=torrentfile.info_hash)
-    client_handshake.set_default_values()
+    client_handshake = HandShake()
+    client_handshake.set_default_values(torrentfile.info_hash)
     
     # tracker
     tracker = Tracker(url, str(client_handshake))
@@ -51,20 +51,24 @@ def main():
     peers_list = tracker.get_peers_list()
     tracker.add_peers(peers_list)
     
-    
-    # TODO -- remove the lines below
+    """
+    TODO -- remove the lines below
+    """ 
     peer = tracker.get_peer_by_ip_port('96.126.104.219', 65373)
     peer.connection.open()
     peer.connection.send_data(str(client_handshake))
     
+    # create peer handshake instance
     peer_handshake_string = peer.connection.recv_data()
     peer_handshake = HandShake()
     peer_handshake.set_handshake_data_from_string(peer_handshake_string)
     
     data = peer.connection.recv_data()
-    peer.append_to_message_buffer(data)
-    peer.consume_message_buffer()
+    peer.append_to_buffer(data)
+    peer.consume_messages()
     
+    import ipdb
+    ipdb.set_trace()
     
     peer.connection.send_interested()
     data = peer.connection.recv_data()
