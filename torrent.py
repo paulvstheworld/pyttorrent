@@ -67,9 +67,6 @@ def main():
     peer.append_to_buffer(data)
     peer.consume_messages()
     
-    import ipdb
-    ipdb.set_trace()
-    
     peer.connection.send_interested()
     data = peer.connection.recv_data()
     peer.append_to_message_buffer(data)
