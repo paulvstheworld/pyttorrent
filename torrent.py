@@ -5,16 +5,13 @@ import os
 import sys
 import urllib2
 
-from helpers.torrentfile import TorrentFile
-from helpers.tracker import Tracker
-from helpers.handshake import get_handshake, unpack_handshake
+from lib.handshake import HandShake
+from lib.torrentfile import TorrentFile
+from lib.tracker import Tracker
 
-
-filepath = '/sandbox/hackerschool/related_assets'
-filename = 'how_to_start_working_as_freelance_web_designer.torrent'
 
 def main():
-    
+    # get filename from the command line argument
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-f', '--file',
                         required=True,
@@ -26,37 +23,68 @@ def main():
     
     # get torrent file data
     torrentfile = TorrentFile(filename)
-    digested_info_hash = torrentfile.get_info_hash().digest()
+    info_hash = torrentfile.get_info_hash().digest()
     url = torrentfile.get_tracker_request_url()
-    handshake = get_handshake(digested_info_hash)
+    pieces = torrentfile.pieces
+    
+    """
+    create proper files and directories
+    """
+    """
+    downloading_file = os.path.abspath('../related_assets/downloads/%s' % torrentfile.filename)
+    file = open(downloading_file, 'wb')
+    f.write(bin_data)
+    """
+    import ipdb
+    ipdb.set_trace()
+    
+    
+    
+    
+    # client_handshake
+    client_handshake = HandShake(info_hash=torrentfile.info_hash)
+    client_handshake.set_default_values()
     
     # tracker
-    tracker = Tracker(url, handshake)
+    tracker = Tracker(url, str(client_handshake))
     tracker_response = tracker.get_response()
     
+    # add peers to the tracker peers collection
     peers_list = tracker.get_peers_list()
     tracker.add_peers(peers_list)
     
     
     # TODO -- remove the lines below
-    peer = tracker.peers.peers[0]
-    peer.message.connect()
+    peer = tracker.get_peer_by_ip_port('96.126.104.219', 65373)
+    peer.connection.open()
+    peer.connection.send_data(str(client_handshake))
     
-    received_handshake = peer.message.get_peer_handshake()
-    msg_length = peer.message.get_msg_length()
-    msg = peer.message.get_msg(msg_length)
-    peer.message.handle_msg(msg)
+    peer_handshake_string = peer.connection.recv_data()
+    peer_handshake = HandShake()
+    peer_handshake.set_handshake_data_from_string(peer_handshake_string)
     
-    # TODO -- uncomment lines below
-    # for peer in tracker.peers.peers:
-    #         peer.connect(handshake)
-    
-    
-    
-    #pstrlen, pstr, reserved_bytes, info_hash, peer_id = unpack_handshake(recv_handshake)
+    data = peer.connection.recv_data()
+    peer.append_to_message_buffer(data)
+    peer.consume_message_buffer()
     
     
+    peer.connection.send_interested()
+    data = peer.connection.recv_data()
+    peer.append_to_message_buffer(data)
+    peer.consume_message_buffer()
     
+    """
+    for i in range(0, 79):
+        peer.connection.send_request(i)
+        data = peer.connection.recv_data()
+        peer.append_to_message_buffer(data)
+        peer.consume_message_buffer()
+    """
+    
+    peer.connection.send_request(0)
+    data = peer.connection.recv_data()
+    peer.append_to_message_buffer(data)
+    peer.consume_message_buffer()
     
     
 if __name__ == "__main__":

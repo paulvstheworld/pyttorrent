@@ -1,2 +1,0 @@
-from connection import Connection
-from connection_collection import ConnectionCollection
