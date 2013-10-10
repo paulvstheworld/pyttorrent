@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import bencode
+import math
 import os
 import sys
 import urllib2
@@ -27,17 +28,8 @@ def main():
     url = torrentfile.get_tracker_request_url()
     pieces = torrentfile.pieces
     
-    """
-    create proper files and directories
-    """
-    """
     downloading_file = os.path.abspath('../related_assets/downloads/%s' % torrentfile.filename)
     file = open(downloading_file, 'wb')
-    f.write(bin_data)
-    """
-    
-    
-    
     
     # client_handshake
     client_handshake = HandShake()
@@ -67,23 +59,49 @@ def main():
     peer.append_to_buffer(data)
     peer.consume_messages()
     
-    peer.connection.send_interested()
+    msg = peer.get_interested_message()
+    peer.connection.send_data(msg)
     data = peer.connection.recv_data()
-    peer.append_to_message_buffer(data)
-    peer.consume_message_buffer()
+    
+    peer.append_to_buffer(data)
+    peer.consume_messages()
+    
+    requested_length = int(math.pow(2,14))
+    
     
     """
-    for i in range(0, 79):
-        peer.connection.send_request(i)
+    msg = peer.get_request_piece_message(0, 0, requested_length)
+    peer.connection.send_data(msg)
+    data = peer.connection.recv_data()
+    data_length = peer.get_4_byte_to_decimal(data[0:4])
+    # keep receiving data until you have the entire block
+    while len(data) < data_length + 4:
+        data += peer.connection.recv_data()
+    """
+
+    for i in range(0, 78):
+        msg = peer.get_request_piece_message(i, 0, requested_length)
+        peer.connection.send_data(msg)
+
         data = peer.connection.recv_data()
-        peer.append_to_message_buffer(data)
-        peer.consume_message_buffer()
-    """
+        data_length = peer.get_4_byte_to_decimal(data[0:4])
+
+        # keep receiving data until you have the entire block
+        while len(data) < data_length + 4:
+            data += peer.connection.recv_data()
+        peer.append_to_buffer(data)
+        peer.consume_messages()
     
-    peer.connection.send_request(0)
+    msg = peer.get_request_piece_message(78, 0, 35)
+    peer.connection.send_data(msg)
     data = peer.connection.recv_data()
-    peer.append_to_message_buffer(data)
-    peer.consume_message_buffer()
+    data_length = peer.get_4_byte_to_decimal(data[0:4])
+    
+    # keep receiving data until you have the entire block
+    while len(data) < data_length + 4:        
+        data += peer.connection.recv_data()
+    peer.append_to_buffer(data)
+    peer.consume_messages()
     
     
 if __name__ == "__main__":
