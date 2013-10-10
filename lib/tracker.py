@@ -38,8 +38,10 @@ class Tracker(object):
         
         return self.get_binary_peers_list()
     
+    
     def get_peer_by_ip_port(self, ip, port):
         return self.peers.get_peer_by_ip_port(ip, port)
+    
     
     def get_binary_peers_list(self):
         peers_list = []

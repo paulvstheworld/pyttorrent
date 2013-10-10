@@ -68,17 +68,6 @@ def main():
     
     requested_length = int(math.pow(2,14))
     
-    
-    """
-    msg = peer.get_request_piece_message(0, 0, requested_length)
-    peer.connection.send_data(msg)
-    data = peer.connection.recv_data()
-    data_length = peer.get_4_byte_to_decimal(data[0:4])
-    # keep receiving data until you have the entire block
-    while len(data) < data_length + 4:
-        data += peer.connection.recv_data()
-    """
-
     for i in range(0, 78):
         msg = peer.get_request_piece_message(i, 0, requested_length)
         peer.connection.send_data(msg)
@@ -92,6 +81,7 @@ def main():
         peer.append_to_buffer(data)
         peer.consume_messages()
     
+    # get last piece (which is smaller than the rest)
     msg = peer.get_request_piece_message(78, 0, 35)
     peer.connection.send_data(msg)
     data = peer.connection.recv_data()

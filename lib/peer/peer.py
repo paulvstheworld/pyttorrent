@@ -31,6 +31,7 @@ class Peer(object):
     def append_to_buffer(self, data):
         self._buffer += data
     
+    
     def consume_messages(self):
         while len(self._buffer) > MSG_LENGTH_SIZE:
             self.consume_message()
@@ -122,21 +123,23 @@ class Peer(object):
         index = self.get_4_byte_to_decimal(payload[0:4])
         begin = self.get_4_byte_to_decimal(payload[4:8])
         block = payload[8:]
-        dir = '/sandbox/hackerschool/torrent-client/related_assets/downloads'
+        dir = '/hackerschool/torrent-client/related_assets/downloads'
         
         filepath = '%s/flag.jpg' % (dir)
-        file = open(filepath, 'wb')
-        file.seek(index * int(math.pow(2,14)) + begin)
+        file = open(filepath, 'r+b')
+                
+        file_pos = index * int(math.pow(2,14)) + begin
+        file.seek(file_pos)
         file.write(block)
         file.close()
         
-        print 'called handle_piece'
+        print 'received index=%d being=%d block_size=%d' % (index, begin, len(block))
         
         
-
     def handle_cancel(self, msg_len, payload):
         print 'called handle_cancel'
-
+        
+        
     def handle_port(self, msg_len, payload):
         print 'called handle_port'
         
