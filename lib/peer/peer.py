@@ -19,43 +19,48 @@ ID_PORT = 9
 
 
 class Peer(object):
+    def __getattr__(self, att):
+        def temp():
+            self.connection.send_data(getattr(self, 'get_'+att))
+
+
     def __init__(self, ip, port, handshake, id=''):
         self.ip = ip
         self.port = port
         self.id = id
-        
+
         self._buffer = ''
         self.bitfield = None
         self.connection = Connection(self.ip, self.port)
-    
+
     def append_to_buffer(self, data):
         self._buffer += data
-    
-    
+
+
     def consume_messages(self):
         while len(self._buffer) > MSG_LENGTH_SIZE:
             self.consume_message()
-            
-    
+
+
     def consume_message(self):
         if len(self._buffer) < MSG_LENGTH_SIZE:
             return
-            
+
         msg_len = self.get_4_byte_to_decimal(self._buffer[0:MSG_LENGTH_SIZE])
-        
+
         if len(self._buffer[1:]) < msg_len:
             return
-        
+
         msg_id, msg_payload = self.get_msg_id_payload(
                 self._buffer[MSG_LENGTH_SIZE : MSG_LENGTH_SIZE+msg_len])
-        
+
         handler = self.get_msg_handler(msg_id)
         if handler:
             handler(msg_len, msg_payload)
-        
+
         self._buffer = self._buffer[MSG_LENGTH_SIZE+msg_len:]
-        
-        
+
+
     def get_4_byte_to_decimal(self, msg):
         msg_len = 0
 
@@ -94,7 +99,7 @@ class Peer(object):
             return self.handle_port
         else:
             raise Exception()
-    
+
     def handle_choke(self, msg_len, payload):
         print 'called handle_choke'
 

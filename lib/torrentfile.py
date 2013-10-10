@@ -16,8 +16,11 @@ class TorrentFile(object):
         self.filename = self.info['name']
         self.piece_length = self.info['piece length']
         self.pieces = self.info['pieces']
-        self.info_hash = sha1(bencode(self.info)).digest()
+        self._info_hash = None
     
+    @property
+    def info_hash(self):
+        return sha1(bencode(self.info)).digest()
     
     
     def get_total_file_length(self):
