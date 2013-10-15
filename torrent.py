@@ -18,26 +18,24 @@ def main():
                         required=True,
                         dest = 'file',
                         type = argparse.FileType('r'))
-    
+
     args = parser.parse_args()
     filename = os.path.abspath(args.file.name)
-    
+
     # get torrent file data
     torrentfile = TorrentFile(filename)
-    info_hash = torrentfile.info_hash
     url = torrentfile.get_tracker_request_url()
-    pieces = torrentfile.pieces
-    
+
     downloading_file = os.path.abspath('../related_assets/downloads/%s' % torrentfile.filename)
     file = open(downloading_file, 'wb')
-    
+
     # client_handshake
     client_handshake = HandShake()
     client_handshake.set_default_values(torrentfile.info_hash)
     
     # tracker
     tracker = Tracker(url, str(client_handshake))
-    tracker_response = tracker.get_response()
+    tracker.send_request()
     
     # add peers to the tracker peers collection
     peers_list = tracker.get_peers_list()
@@ -49,25 +47,25 @@ def main():
     peer = tracker.get_peer_by_ip_port('96.126.104.219', 65373)
     peer.connection.open()
     peer.connection.send_data(str(client_handshake))
-    
+
     # create peer handshake instance
     peer_handshake_string = peer.connection.recv_data()
     peer_handshake = HandShake()
     peer_handshake.set_handshake_data_from_string(peer_handshake_string)
-    
+
     data = peer.connection.recv_data()
     peer.append_to_buffer(data)
     peer.consume_messages()
-    
+
     msg = peer.get_interested_message()
     peer.connection.send_data(msg)
     data = peer.connection.recv_data()
-    
+
     peer.append_to_buffer(data)
     peer.consume_messages()
-    
+
     requested_length = int(math.pow(2,14))
-    
+
     for i in range(0, 78):
         msg = peer.get_request_piece_message(i, 0, requested_length)
         peer.connection.send_data(msg)

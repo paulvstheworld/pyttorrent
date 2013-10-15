@@ -4,7 +4,7 @@ import urllib2
 
 from peer import Peer, PeerCollection
 
-BLOCK_SIZE = 6
+BYTES_IN_IP = 6
 
 
 class Tracker(object):
@@ -15,10 +15,9 @@ class Tracker(object):
         self.handshake = handshake
     
     
-    def get_response(self):
+    def send_request(self):
         response = urllib2.urlopen(self.requesturl).read()
         self.decoded_response = bencode.bdecode(response)
-        return self.decoded_response
         
         
     def has_binary_peers(self):
@@ -53,14 +52,14 @@ class Tracker(object):
         
         while(index_start < index_end):
             # get block
-            binary_peer_block = peers[index_start : index_start + BLOCK_SIZE]
+            binary_peer_block = peers[index_start : index_start + BYTES_IN_IP]
             
             # add peer info dictionary to list
             peer_dict = self.get_binary_peer_dict(binary_peer_block)
             peers_list.append(peer_dict)
             
             # increment index start by the next block size
-            index_start += BLOCK_SIZE
+            index_start += BYTES_IN_IP
             
         return peers_list
     
