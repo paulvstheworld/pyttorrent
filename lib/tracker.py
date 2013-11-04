@@ -8,12 +8,9 @@ BYTES_IN_IP = 6
 
 
 class Tracker(object):
-    def __init__(self, requesturl, handshake):
+    def __init__(self, requesturl):
         self.requesturl = requesturl
         self.decoded_response = None
-        self.peers = PeerCollection()
-        self.handshake = handshake
-    
     
     def send_request(self):
         response = urllib2.urlopen(self.requesturl).read()
@@ -23,13 +20,6 @@ class Tracker(object):
     def has_binary_peers(self):
         peers = self.decoded_response['peers']
         return not isinstance(peers, list)    
-    
-    
-    def add_peers(self, peers_list):
-        for peer_obj in peers_list:
-            peer = Peer(peer_obj['ip'], peer_obj['port'], self.handshake)
-            self.peers.add(peer)
-    
     
     def get_peers_list(self):
         if not self.has_binary_peers():

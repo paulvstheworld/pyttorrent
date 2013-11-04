@@ -22,10 +22,8 @@ class TorrentFile(object):
     def info_hash(self):
         return sha1(bencode(self.info)).digest()
     
-    
     def get_total_file_length(self):
         return self.info['length']
-    
     
     def get_tracker_request_qs(self):
         return urlencode({
@@ -34,11 +32,9 @@ class TorrentFile(object):
             'left': self.get_total_file_length(),
         })
     
-    
     def get_tracker_request_url(self):
         qs = self.get_tracker_request_qs()
         return '?'.join([self.announce, qs])
-    
     
     def __str__(self):
         return 'title="%s"\nannounce="%s"\nfilename="%s"\npiece_length=%d\n' % (

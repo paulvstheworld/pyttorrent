@@ -5,4 +5,4 @@ ipython==1.1.0
 readline==6.2.4.1
 requests==2.0.0
 wsgiref==0.1.2
-hg+http://hg.bitbucket.org/thomasballinger/bpython@scroll-frontend
+Twisted==13.1.0

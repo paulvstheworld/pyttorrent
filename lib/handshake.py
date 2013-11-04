@@ -54,7 +54,6 @@ class HandShake(object):
         self.info_hash = info_hash
         self.peer_id = peer_id
     
-    
     def __str__(self):
         return "%s%s%s%s%s" % (
             chr(self.pstrlen),
