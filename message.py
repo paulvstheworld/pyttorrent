@@ -28,30 +28,37 @@ class Message(object):
 
     def bind_message_handlers(self, deferred):
         print 'consuming'
-        
+
         if len(self._buffer) < MSG_LENGTH_SIZE:
             return
         
-        msg_len = self.get_4_byte_to_decimal(self._buffer[0:MSG_LENGTH_SIZE])
-
-        if msg_len == 0:
-            #TODO handle_keep alive
-            return
+        # get message length
+        msg_len_in_bytes = self._buffer[0:MSG_LENGTH_SIZE]
+        msg_len = self.get_4_byte_to_decimal(msg_len_in_bytes)
         
+        # keep alive message
+        if msg_len == 0:
+            self.handle_keep_alive(deferred)
+            # remove keep alive from message buffer
+            self._buffer = self._buffer[4:]
+            # continue recursion
+            self.bind_message_handlers(deferred)
+
+        # did not receive full message
         if len(self._buffer[1:]) < msg_len:
             return
 
-        msg_id, msg_payload = self.get_msg_id_and_payload(
-                self._buffer[MSG_LENGTH_SIZE : MSG_LENGTH_SIZE+msg_len])
-        
-        # remove msg that is about to be handled
+        msg_body = self._buffer[MSG_LENGTH_SIZE : MSG_LENGTH_SIZE + msg_len]
+        msg_id, msg_payload = self.get_msg_id_and_payload(msg_body)
+
+        # remove msg that is about to be handled from buffer
         self._buffer = self._buffer[MSG_LENGTH_SIZE + msg_len:]
-        
+
         # call specific message handler
         handler = self.get_handler(msg_id)
         handler(msg_len, msg_payload, deferred)
-        
-        # recursively call itself until there are no (full) messages to consume
+
+        # recursively call itself until there are no more (full) messages to consume
         self.bind_message_handlers(deferred)
 
     def is_empty(self):
@@ -71,7 +78,7 @@ class Message(object):
         handshake_len = self.get_handshake_len()
         self._buffer = self._buffer[handshake_len:]
 
-    
+
     ###### HANDLER METHODS ######
     def get_handler(self, msg_id):
         if ID_CHOKE == msg_id:
@@ -96,47 +103,50 @@ class Message(object):
             return self.handle_port
         else:
             raise Exception("Unknown message id=%d" % (msg_id,) )
-    
+
+    def handle_keep_alive(self, deferred):
+        print 'called handle_keep_alive'
+
     def handle_choke(self, msg_len, payload, deferred):
         print 'called handle_choke'
-        
+
     def handle_unchoke(self, msg_len, payload, deferred):
         print 'called handle_unchoke'
-    
+
     def handle_interested(self, msg_len, payload, deferred):
         print 'called handle_interested'
-        
+
     def handle_not_interested(self, msg_len, payload, deferred):
         print 'called handle_not_interested'
-    
+
     def handle_have(self, msg_len, payload, deferred):
         print 'handle_have'
         piece_index = self.get_4_byte_to_decimal(payload)
         self.peer.bitfield[piece_index] = True
-    
+
     def handle_bitfield(self, msg_len, payload, deferred):
         print 'handle_bitfield'
         self.peer.bitfield = BitArray(bytes=payload)
-        
+
     def handle_request(self, msg_len, payload, deferred):
         print 'handle_request'
-    
+
     def handle_piece(self, msg_len, payload, deferred):
         print 'handle_piece'
-    
+
     def handle_cancel(self, msg_len, payload, deferred):
         print 'handle_cancel'
-    
+
     def handle_port(self, msg_len, payload, deferred):
         print 'handle_port'
 
-    
+
     ###### UTILITY METHODS ######
     def get_msg_id_and_payload(self, msg):
         msg_id = struct.unpack('B', msg[0])[0]
         payload = msg[1:]
         return msg_id, payload
-    
+
     def get_4_byte_to_decimal(self, msg):
         msg_len = 0
         msg_len += struct.unpack('B', msg[0])[0] * int(math.pow(256, 3))

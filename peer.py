@@ -19,7 +19,7 @@ class Peer(object):
         self.connector = None
         self.connected = None
         
-        # bitfield
+        # peer properties
         self.bitfield = None
         
         # timestamp
@@ -95,7 +95,7 @@ class PeerClientFactory(ClientFactory):
 
     def handle_data(self, data):
         self.message.add(data)
-        
+
         if not self.peer.received_handshake:
             peer_handshake = self.message.get_handshake()
             if not peer_handshake:
