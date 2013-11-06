@@ -44,10 +44,11 @@ def main():
     """
     TODO -- remove the lines below
     """ 
-    peer = tracker.get_peer_by_ip_port('96.126.104.219', 65373)
+    peer = tracker.get_peer_by_ip_port('96.126.104.219', 62859)
     peer.connection.open()
     peer.connection.send_data(str(client_handshake))
 
+    
     # create peer handshake instance
     peer_handshake_string = peer.connection.recv_data()
     peer_handshake = HandShake()
