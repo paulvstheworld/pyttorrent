@@ -37,7 +37,8 @@ def main():
     client = BitTorrentClient(file_location, download_dir)
     
     tracker = Tracker(client.torrentfile)
-    tracker.handle_setup_peer_connections()
+    tracker.handle_peer_connections()
+    
     reactor.run()
 
 if __name__ == '__main__':

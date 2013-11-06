@@ -1,6 +1,5 @@
 from hashlib import sha1
 from bencode import bdecode, bencode
-from urllib import urlencode
 
 class TorrentFile(object):
     def __init__(self, peer_id, filepath):
@@ -27,18 +26,8 @@ class TorrentFile(object):
         #TODO handle multiple-file torrents
         return self.info['length']
     
-    @property
-    def tracker_request_url(self):
-        qs = urlencode({
-            'peer_id': self.peer_id,
-            'info_hash': self.info_hash,
-            'left': self.total_file_length,
-        })
-        return '?'.join([self.announce, qs])
-    
     def __str__(self):
         msg = "announce=%s\nfilename=%s\npiece_length=%d\ntotal_file_length=%d"
         return msg % (self.announce, self.filename, 
             self.piece_length, self.total_file_length)
-        
     
