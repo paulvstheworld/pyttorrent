@@ -19,16 +19,19 @@ ID_PORT = 9
 
 
 class Message(object):
-    def __init__(self, peer):
+    def __init__(self, peer, peer_protocol_factory):
         self.peer = peer
+        self.peer_protocol_factory = peer_protocol_factory
         self._buffer = ''
+
 
     def add(self, data):
         self._buffer += data
 
+
     def bind_message_handlers(self, deferred):
         print 'consuming'
-
+        
         if len(self._buffer) < MSG_LENGTH_SIZE:
             return
         
@@ -39,10 +42,13 @@ class Message(object):
         # keep alive message
         if msg_len == 0:
             self.handle_keep_alive(deferred)
+            
             # remove keep alive from message buffer
             self._buffer = self._buffer[4:]
+            
             # continue recursion
-            self.bind_message_handlers(deferred)
+            return self.bind_message_handlers(deferred)
+            
 
         # did not receive full message
         if len(self._buffer[1:]) < msg_len:
@@ -59,10 +65,12 @@ class Message(object):
         handler(msg_len, msg_payload, deferred)
 
         # recursively call itself until there are no more (full) messages to consume
-        self.bind_message_handlers(deferred)
+        return self.bind_message_handlers(deferred)
+
 
     def is_empty(self):
         return len(self._buffer) > 0
+
 
     def get_handshake(self):
         handshake_len = self.get_handshake_len()
@@ -70,9 +78,11 @@ class Message(object):
             return None
         return self._buffer[:handshake_len]
 
+
     def get_handshake_len(self):
         pstr_len = struct.unpack('B', self._buffer[0])[0]
         return 49 + pstr_len
+
 
     def consume_handshake(self):
         handshake_len = self.get_handshake_len()
@@ -104,6 +114,7 @@ class Message(object):
         else:
             raise Exception("Unknown message id=%d" % (msg_id,) )
 
+
     def handle_keep_alive(self, deferred):
         print 'called handle_keep_alive'
 
@@ -127,6 +138,10 @@ class Message(object):
     def handle_bitfield(self, msg_len, payload, deferred):
         print 'handle_bitfield'
         self.peer.bitfield = BitArray(bytes=payload)
+        
+        # create deferred
+        # add callback to request additional pieces from peer connection
+        
 
     def handle_request(self, msg_len, payload, deferred):
         print 'handle_request'

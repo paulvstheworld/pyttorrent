@@ -34,6 +34,7 @@ def parse_args():
 
 def main():
     file_location, download_dir = parse_args()
+    
     client = BitTorrentClient(file_location, download_dir)
     
     tracker = Tracker(client.torrentfile)

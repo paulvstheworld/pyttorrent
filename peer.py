@@ -43,7 +43,7 @@ class Peer(object):
 
     def get_connection_deferred(self):
         d = Deferred()
-        factory = PeerClientFactory(self, d)
+        factory = PeerProtocolFactory(self, d)
         self.connector = reactor.connectTCP(self.ip, self.port, factory)
         return d
 
@@ -74,13 +74,19 @@ class PeerProtocol(Protocol):
         self.factory.peer.mark_message_timestamp()
 
 
-class PeerClientFactory(ClientFactory):
+class PeerProtocolFactory(ClientFactory):
     protocol = PeerProtocol
 
     def __init__(self, peer, deferred):
         self.peer = peer
-        self.message = Message(self.peer)
+        self.message = Message(self.peer, self)
         self.deferred = deferred
+        self.connected_protocol = None
+    
+    def buildProtocol(self, address):
+        proto = ClientFactory.buildProtocol(self, address)
+        self.connected_protocol = proto
+        return proto
 
     def clientConnectionFailed(self, connector, reason):
         if self.deferred is not None:
