@@ -5,122 +5,72 @@ from twisted.internet import reactor
 from twisted.internet.protocol import Protocol, ClientFactory
 from twisted.internet.defer import Deferred
 
-from handshake import Handshake
-from message import Message
+from handshake import parse_handshake
+
+from message import parse_message
 
 
 class Peer(object):
-    def __init__(self, ip, port, torrentfile):
+    def __init__(self, ip, port, peer_id):
         self.ip = ip
         self.port = port
-        self.peer_id = torrentfile.peer_id
-        self.torrentfile = torrentfile
-        
-        self.connector = None
-        self.connected = None
-        
-        # peer properties
-        self.bitfield = None
-        
-        # timestamp
-        self.timestamp_last_message_sent = None
-        
-        # flags
-        self.received_handshake = False
-        self.choked = True
+        self.peer_id = peer_id
 
-
-    def setup_connection(self):
-        def handle_connection_request(self):
-            print 'handle connection request called'
-
-        def handle_connection_failure(self):
-            print 'peer connection failure called'
-
-        d = self.get_connection_deferred()
-        d.addCallbacks(handle_connection_request, handle_connection_failure)
-
-
-    def get_connection_deferred(self):
-        d = Deferred()
-        factory = PeerProtocolFactory(self, d)
-        self.connector = reactor.connectTCP(self.ip, self.port, factory)
-        return d
-
-
-    def mark_message_timestamp(self):
-        self.timestamp_last_message_sent = time.time()
-
-    def is_correct_info_hash(self, peer_handshake):
-        return peer_handshake.info_hash == self.torrentfile.info_hash
+    def connect(self, master_control):
+        factory = PeerProtocolFactory(master_control)
+        reactor.connectTCP(self.ip, self.port, factory)
 
 
 class PeerProtocol(Protocol):
+    def __init__(self):
+        self._buffer = ''
+        self.handshook = False
+        self.master_control = None
+
     def dataReceived(self, data):
-        print 'data=%s' % data
-        self.factory.handle_data(data)
+        self._buffer += data
+        print 'received data=%s' % data
+
+        if not self.handshook:
+            peer_handshake, self._buffer = parse_handshake(self._buffer)
+            if peer_handshake:
+                # if successful, will set handshook to true
+                if not self.master_control.is_valid_handshake(peer_handshake):
+                    self.master_control.handle_invalid_handshake(self)
+                    return
+
+                self.master_control.handle_valid_handshake(self)
+                msgs, self._buffer = parse_message(self._buffer)
+                self.master_control.handle_messages(self, msgs)
+
+        # parse buffer for messages
+        else:
+            msgs, self._buffer = parse_message(self._buffer)
+            self.master_control.handle_messages(self, msgs)
 
     def connectionMade(self):
-        handshake_str = str(self.factory.get_handshake())
-        self.send_message(handshake_str)
-        print 'sent peer handshake'
+        self.master_control.handle_connection_made(self)
 
     def connectionLost(self, reason):
-        print self.transport.getPeer()
-        print 'connection was lost reason=%r' % (reason,)
+        print "connection lost %r %s" % (self.transport.getPeer(), reason)
 
-    def send_message(self, msg):
-        self.transport.write(msg)
-        self.factory.peer.mark_message_timestamp()
+    def send_data(self, data):
+        self.transport.write(data)
+
+    def handshake_received(self):
+        self.handshook = True
 
 
 class PeerProtocolFactory(ClientFactory):
     protocol = PeerProtocol
 
-    def __init__(self, peer, deferred):
-        self.peer = peer
-        self.message = Message(self.peer, self)
-        self.deferred = deferred
-        self.connected_protocol = None
-    
+    def __init__(self, master_control):
+        self.master_control = master_control
+
     def buildProtocol(self, address):
         proto = ClientFactory.buildProtocol(self, address)
-        self.connected_protocol = proto
+        proto.master_control = self.master_control
         return proto
-
-    def clientConnectionFailed(self, connector, reason):
-        if self.deferred is not None:
-            d, self.deferred = self.deferred, None
-            d.errback(reason)
-
-    def get_handshake(self):
-        peer_id = self.peer.peer_id
-        info_hash = self.peer.torrentfile.info_hash
-        handshake = Handshake(peer_id=peer_id, info_hash=info_hash)
-        return handshake
-
-    def handle_data(self, data):
-        self.message.add(data)
-
-        if not self.peer.received_handshake:
-            peer_handshake = self.message.get_handshake()
-            if not peer_handshake:
-                return
-
-            # check peer handshake info hash
-            peer_handshake = Handshake(handshake_str=peer_handshake)
-            if not self.peer.is_correct_info_hash(peer_handshake):
-                self.peer.connector.disconnect()
-                return
-
-            self.message.consume_handshake()
-            self.peer.received_handshake = True
-
-            # attempt to consume any remaining messages
-            if not self.message.is_empty():
-                self.message.bind_message_handlers(self.deferred)
-        else:
-            self.message.bind_message_handlers(self.deferred)
 
 
 def get_peer_ipaddress(bytes):
