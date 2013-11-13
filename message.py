@@ -16,6 +16,7 @@ ID_PIECE = 7
 ID_CANCEL = 8
 ID_PORT = 9
 
+
 class Message(object):
     def __init__(self, msg_len=0, id=None, payload=None):
         self.msg_len=msg_len
@@ -30,6 +31,7 @@ def parse_message(buffer):
 def parse_message_helper(messages, buffer):
     _msg_length_size = 4
     
+    # check for message length
     if len(buffer) < _msg_length_size:
         return messages, buffer
 
@@ -41,11 +43,11 @@ def parse_message_helper(messages, buffer):
         buffer = buffer[4:]
         return parse_message_helper(messages, buffer)
         
-    # incomplete message
+    # check for incomplete message
     if len(buffer[1:]) < msg_len:
         return messages, buffer
 
-    # complete message
+    # consume complete message
     msg_body = buffer[_msg_length_size : _msg_length_size + msg_len]
     id, payload = get_message_id_and_payload(msg_body)
     

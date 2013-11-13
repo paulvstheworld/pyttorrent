@@ -24,17 +24,16 @@ class Peer(object):
 class PeerProtocol(Protocol):
     def __init__(self):
         self._buffer = ''
-        self.handshook = False
+        self.shook_hand = False
         self.master_control = None
 
     def dataReceived(self, data):
         self._buffer += data
-        #print 'received data=%s' % data
 
-        if not self.handshook:
+        if not self.shook_hand:
             peer_handshake, self._buffer = parse_handshake(self._buffer)
             if peer_handshake:
-                # if successful, will set handshook to true
+                # if successful, will set shook hands to true
                 if not self.master_control.is_valid_handshake(peer_handshake):
                     self.master_control.handle_invalid_handshake(self)
                     return
@@ -60,7 +59,7 @@ class PeerProtocol(Protocol):
         self.transport.write(data)
 
     def handshake_received(self):
-        self.handshook = True
+        self.shook_hand = True
     
     def finished(self):
         reactor.stop()
