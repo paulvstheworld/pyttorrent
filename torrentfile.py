@@ -5,7 +5,7 @@ from bencode import bdecode, bencode
 
 class TorrentFile(object):
     def __init__(self, file_path):
-        f = open(file_path, 'rb') # read file in binary mode
+        f = open(file_path, 'r+b') # read file in binary mode
         decoded_torrent_file = bdecode(f.read())
 
         self.file_path = file_path
@@ -30,7 +30,6 @@ class TorrentFile(object):
             bitstring += '0' # padded last piece because it has an incomplete piece size
         self.bitfield = BitArray(bin=bitstring)
 
-
     @property
     def info_hash(self):
         return sha1(bencode(self.info)).digest()
@@ -39,6 +38,9 @@ class TorrentFile(object):
     def total_file_length(self):
         #TODO handle multiple-file torrents
         return self.info['length']
+
+    def get_piece_info_hash(self, piece_index):
+        return self.pieces[ piece_index*20 : (piece_index+1)*20 ]
 
     def __str__(self):
         msg = "announce=%s\nfilename=%s\npiece_length=%d\ntotal_file_length=%d"

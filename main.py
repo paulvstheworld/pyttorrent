@@ -36,15 +36,15 @@ def parse_args():
 def main():
     file_location, download_dir = parse_args()
     torrentfile = TorrentFile(file_location)
-    
+
     client = BitTorrentClient(download_dir)
     client.create_file(torrentfile)
 
-    master_control = MasterControl(client.peer_id, torrentfile)
-    
+    master_control = MasterControl(client.peer_id, download_dir, torrentfile)
+
     tracker = Tracker(client.peer_id, torrentfile)
     tracker.get_peers_and_connect(client.peer_id, torrentfile, master_control)
-    
+
     reactor.run()
 
 

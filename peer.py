@@ -29,7 +29,7 @@ class PeerProtocol(Protocol):
 
     def dataReceived(self, data):
         self._buffer += data
-        print 'received data=%s' % data
+        #print 'received data=%s' % data
 
         if not self.handshook:
             peer_handshake, self._buffer = parse_handshake(self._buffer)
@@ -40,6 +40,8 @@ class PeerProtocol(Protocol):
                     return
 
                 self.master_control.handle_valid_handshake(self)
+
+                # parse buffer for messages
                 msgs, self._buffer = parse_message(self._buffer)
                 self.master_control.handle_messages(self, msgs)
 
@@ -59,6 +61,9 @@ class PeerProtocol(Protocol):
 
     def handshake_received(self):
         self.handshook = True
+    
+    def finished(self):
+        reactor.stop()
 
 
 class PeerProtocolFactory(ClientFactory):
