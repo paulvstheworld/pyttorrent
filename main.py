@@ -40,10 +40,14 @@ def main():
     client = BitTorrentClient(download_dir)
     client.create_file(torrentfile)
 
+    # move this client
     master_control = MasterControl(client.peer_id, download_dir, torrentfile)
 
     tracker = Tracker(client.peer_id, torrentfile)
     tracker.get_peers_and_connect(client.peer_id, torrentfile, master_control)
+
+    # give master control the tracker
+    # master_control.add_tracker(tracker)
 
     reactor.run()
 

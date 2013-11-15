@@ -29,12 +29,12 @@ class Tracker(object):
         def handle_response_body(body):
             data = bdecode(body)
             self.min_interval = data.get('min interval')
-            self.interval = data.get('interval')  
+            self.interval = data.get('interval')
 
             peers = self.get_peers(data['peers'])          
             for peer in peers:
                 master_control.add_peer_connection(peer)
-                
+
                 # connect to peer and pass master_control to peer connection
                 peer.connect(master_control)
 

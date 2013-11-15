@@ -12,6 +12,9 @@ class Handshake(object):
             reserved='\x00\x00\x00\x00\x00\x00\x00\x00', 
             info_hash='', handshake_str=''):
         
+        # TODO do more checking
+        # check handshake size
+        # check if certain kwargs were received
         if handshake_str:
             pstrlen, pstr, reserved, info_hash, peer_id = self.explode(handshake_str)
             

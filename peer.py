@@ -50,6 +50,7 @@ class PeerProtocol(Protocol):
             self.master_control.handle_messages(self, msgs)
 
     def connectionMade(self):
+        print self.transport.getPeer()
         self.master_control.handle_connection_made(self)
 
     def connectionLost(self, reason):
