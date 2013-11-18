@@ -9,6 +9,8 @@ from message import get_interested_message, get_request_piece_message
 from message import (ID_KEEPALIVE, ID_CHOKE, ID_UNCHOKE, ID_INTERESTED, 
                      ID_NOT_INTERESTED, ID_HAVE, ID_BITFIELD, ID_REQUEST, 
                      ID_PIECE, ID_CANCEL, ID_PORT)
+
+from peer import PeerConnection
 from utils import get_4_bytes_in_decimal
 
 
@@ -23,6 +25,9 @@ class MasterControl(object):
         self.peer_connections = []
         print 'Master control was created'
 
+
+
+    ######### PIECE UTILITY METHODS #########
     def has_retrieved_all_pieces(self):
         return self.curr_bitfield == self.torrentfile.bitfield
 
@@ -30,21 +35,52 @@ class MasterControl(object):
         print 'piece for index=%d is valid' % index
         return sha1(block).digest() == self.torrentfile.get_piece_info_hash(index)
 
+    def request_next_piece(self, peer_connection):
+        piece_index = self.get_next_piece_index(peer_connection)
+
+        print 'next needed piece=%d' % piece_index
+
+        piece_length = self.get_piece_length(piece_index)
+        self.request_piece(peer_connection, piece_index, 0, piece_length)
+        peer_connection.piece_requested = piece_index
+
+    def request_piece(self, peer_connection, piece_index, begin, requested_length):
+        piece_message = get_request_piece_message(piece_index, begin, requested_length)
+        peer_connection.send_data(piece_message)
+
+    def set_piece_received(self, index):
+        self.curr_bitfield[index] = True
+
+
+
+    ######### PEER UTILITY METHODS #########
+
     def add_peer_connection(self, peer):
         peer_connection = PeerConnection(peer.ip, peer.port)
         self.peer_connections.append(peer_connection)
-
 
     def get_peer_connection(self, peer_protocol):
         peer = peer_protocol.transport.getPeer()
         ip = peer.host
         port = peer.port 
-        
+
         for pc in self.peer_connections:
             if pc.ip == ip and pc.port == port:
                 return pc
         return None
 
+    def get_piece_length(self, index):
+        # check if last piece
+        if index == self.torrentfile.total_pieces-1:
+            piece_length = self.torrentfile.leftover_piece_length
+        else:
+            piece_length = self.torrentfile.piece_length
+
+        return piece_length
+
+
+
+    ######### CONNECTION HANDLERS #########
 
     def handle_connection_made(self, peer_protocol):
         peer_connection = self.get_peer_connection(peer_protocol)
@@ -62,6 +98,9 @@ class MasterControl(object):
         peer_connection.connected = False
 
 
+
+    ######### HANDSHAKE UTILITY METHODS #########
+
     def is_valid_handshake(self, peer_handshake):
         return self.torrentfile.info_hash == peer_handshake.info_hash
 
@@ -76,79 +115,81 @@ class MasterControl(object):
         peer_protocol.handshake_received()
 
 
+
+    ######### MESSAGE HANDLERS #########
+
     def handle_messages(self, peer_protocol, messages):
         for message in messages:
             handler = self.get_handler(message.id)
             handler(peer_protocol, message.payload)
 
-
     def get_handler(self, message_id):
         if message_id == ID_KEEPALIVE:
-            return self.handle_keepalive
+            return self.handle_KEEPALIVE
         elif message_id == ID_CHOKE:
-            return self.handle_choke
+            return self.handle_CHOKE
         elif message_id == ID_UNCHOKE:
-            return self.handle_unchoke
+            return self.handle_UNCHOKE
         elif message_id == ID_INTERESTED:
-            return self.handle_interested
+            return self.handle_INTERESTED
         elif message_id == ID_NOT_INTERESTED:
-            return self.handle_not_interested
+            return self.handle_NOT_INTERESTED
         elif message_id == ID_HAVE:
-            return self.handle_have
+            return self.handle_HAVE
         elif message_id == ID_BITFIELD:
-            return self.handle_bitfield
+            return self.handle_BITFIELD
         elif message_id == ID_REQUEST:
-            return self.handle_request
+            return self.handle_REQUEST
         elif message_id == ID_PIECE:
-            return self.handle_piece
+            return self.handle_PIECE
         elif message_id == ID_PORT:
-            return self.handle_port
+            return self.handle_PORT
         else:
             raise Exception('Message id=%d not handled' % (message_id))
 
 
-    def handle_keepalive(self, peer_protocol, msg_payload):
+    def handle_KEEPALIVE(self, peer_protocol, msg_payload):
         print 'called handle_keep_alive %r' % (peer_protocol.transport.getPeer())
 
 
-    def handle_choke(self, peer_protocol, msg_payload):
+    def handle_CHOKE(self, peer_protocol, msg_payload):
         print 'called handle_choke %r' % (peer_protocol.transport.getPeer())
 
 
-    def handle_unchoke(self, peer_protocol, msg_payload):
+    def handle_UNCHOKE(self, peer_protocol, msg_payload):
         peer_connection = self.get_peer_connection(peer_protocol)
         peer_connection.choked = False
         self.request_next_piece(peer_connection)
 
 
-    def handle_interested(self, peer_protocol, msg_payload):
+    def handle_INTERESTED(self, peer_protocol, msg_payload):
         print 'called handle_interested %r' % (peer_protocol.transport.getPeer())
 
 
-    def handle_not_interested(self, peer_protocol, msg_payload):
+    def handle_NOT_INTERESTED(self, peer_protocol, msg_payload):
         print 'called handle_not_interested %r' % (peer_protocol.transport.getPeer())
 
 
-    def handle_have(self, peer_protocol, msg_payload):
+    def handle_HAVE(self, peer_protocol, msg_payload):
         piece_index = get_4_bytes_in_decimal(msg_payload)
         peer_connection = self.get_peer_connection(peer_protocol)
         peer_connection.bitfield[piece_index] = True        
 
 
-    def handle_bitfield(self, peer_protocol, msg_payload):
+    def handle_BITFIELD(self, peer_protocol, msg_payload):
         peer_connection = self.get_peer_connection(peer_protocol)
         peer_connection.bitfield = BitArray(bytes=msg_payload)
 
         # send interested
-        self.send_interested(peer_protocol)
+        self.send_INTERESTED(peer_protocol)
         peer_connection.interested_sent = True
 
 
-    def handle_request(self, peer_protocol, msg_payload):
+    def handle_REQUEST(self, peer_protocol, msg_payload):
         print 'called handle_request %r' % (peer_protocol.transport.getPeer())
 
 
-    def handle_piece(self, peer_protocol, msg_payload):
+    def handle_PIECE(self, peer_protocol, msg_payload):
         print 'received piece from peer %r' % (peer_protocol.transport.getPeer())
         
         peer_connection = self.get_peer_connection(peer_protocol)
@@ -183,7 +224,7 @@ class MasterControl(object):
             self.request_next_piece(peer_connection)
 
 
-    def handle_port(self, peer_protocol, msg_payload):
+    def handle_PORT(self, peer_protocol, msg_payload):
         print 'called handle_port %r' % (peer_protocol.transport.getPeer())
 
 
@@ -195,39 +236,14 @@ class MasterControl(object):
         return None
 
 
-    def send_interested(self, peer_protocol):
+
+    ######### WRITING TO PEER #########
+
+    def send_INTERESTED(self, peer_protocol):
         interested_msg = get_interested_message()
         peer_connection = self.get_peer_connection(peer_protocol)
         peer_connection.send_data(interested_msg)
 
-
-    def request_next_piece(self, peer_connection):
-        piece_index = self.get_next_piece_index(peer_connection)
-        
-        print 'next needed piece=%d' % piece_index
-        
-        piece_length = self.get_piece_length(piece_index)
-        self.request_piece(peer_connection, piece_index, 0, piece_length)
-        peer_connection.piece_requested = piece_index
-
-
-    def get_piece_length(self, index):
-        # check if last piece
-        if index == self.torrentfile.total_pieces-1:
-            piece_length = self.torrentfile.leftover_piece_length
-        else:
-            piece_length = self.torrentfile.piece_length
-        
-        return piece_length
-        
-
-    def request_piece(self, peer_connection, piece_index, begin, requested_length):
-        piece_message = get_request_piece_message(piece_index, begin, requested_length)
-        peer_connection.send_data(piece_message)
-
-
-    def set_piece_received(self, index):
-        self.curr_bitfield[index] = True
     
     def write_to_file(self, index, begin, block):
         filepath = os.path.join(self.download_dir, self.torrentfile.filename)
@@ -235,31 +251,7 @@ class MasterControl(object):
         file.seek(index * self.torrentfile.piece_length + begin)
         file.write(block)
         file.close()
-        
 
-class PeerConnection(object):
-    def __init__(self, ip, port):
-        self.ip = ip
-        self.port = port
-        self.protocol = None
 
-        self.bitfield = BitArray()
-        self.connected = False
-        self.choked = True
-        self.interested = False
-        self.last_message = None
-        self.piece_requested = None
 
-    def reset(self):
-        self.connected = False
-        self.choked = True
-        self.last_message = None
-        self.interested = False
-        self.requested_piece = None
 
-    def send_data(self, data):
-        self.last_message = time.time()
-        self.protocol.send_data(data)
-    
-    def finished(self):
-        self.protocol.finished()

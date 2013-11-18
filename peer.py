@@ -5,8 +5,9 @@ from twisted.internet import reactor
 from twisted.internet.protocol import Protocol, ClientFactory
 from twisted.internet.defer import Deferred
 
-from handshake import parse_handshake
+from bitstring import BitArray
 
+from handshake import parse_handshake
 from message import parse_message
 
 
@@ -19,6 +20,34 @@ class Peer(object):
     def connect(self, master_control):
         factory = PeerProtocolFactory(master_control)
         reactor.connectTCP(self.ip, self.port, factory)
+
+
+class PeerConnection(object):
+    def __init__(self, ip, port):
+        self.ip = ip
+        self.port = port
+        self.protocol = None
+
+        self.bitfield = BitArray()
+        self.connected = False
+        self.choked = True
+        self.interested = False
+        self.last_message = None
+        self.piece_requested = None
+
+    def reset(self):
+        self.connected = False
+        self.choked = True
+        self.last_message = None
+        self.interested = False
+        self.requested_piece = None
+
+    def send_data(self, data):
+        self.last_message = time.time()
+        self.protocol.send_data(data)
+
+    def finished(self):
+        self.protocol.finished()
 
 
 class PeerProtocol(Protocol):
