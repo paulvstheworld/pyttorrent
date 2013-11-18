@@ -16,6 +16,3 @@ TODOs
 
 * Large files
 	* Request small block sizes (w/ offsets)
-
-
-
