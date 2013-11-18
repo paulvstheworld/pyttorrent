@@ -25,7 +25,7 @@ class Tracker(object):
         return '?'.join([torrentfile.announce, qs])
 
 
-    def get_peers_and_connect(self, peer_id, torrentfile, master_control):
+    def get_peers_and_connect(self, client, torrentfile):
         def handle_response_body(body):
             data = bdecode(body)
             self.min_interval = data.get('min interval')
@@ -33,10 +33,10 @@ class Tracker(object):
 
             peers = self.get_peers(data['peers'])          
             for peer in peers:
-                master_control.add_peer_connection(peer)
+                client.add_peer_connection(peer)
 
-                # connect to peer and pass master_control to peer connection
-                peer.connect(master_control)
+                # connect to peer and pass client to peer connection
+                peer.connect(client)
 
         def handle_request(response):
             d = readBody(response)
@@ -47,7 +47,7 @@ class Tracker(object):
             reactor.stop()
 
         agent = Agent(reactor)
-        tracker_request_url = self.tracker_request_url(peer_id, torrentfile)
+        tracker_request_url = self.tracker_request_url(self.peer_id, torrentfile)
         d = agent.request('GET', tracker_request_url)
         d.addCallbacks(handle_request, handle_request_err)
 

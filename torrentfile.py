@@ -21,7 +21,7 @@ class TorrentFile(object):
         self.total_pieces = len(self.pieces) / 20
 
         # will be zero if the last piece fits perfectly
-        # otherwise will represent the final piece_length in bytes
+        #   otherwise will represent the final piece_length in bytes
         self.leftover_piece_length = self.length % self.piece_length
 
         # set bitfield

@@ -17,8 +17,8 @@ class Peer(object):
         self.port = port
         self.peer_id = peer_id
 
-    def connect(self, master_control):
-        factory = PeerProtocolFactory(master_control)
+    def connect(self, client):
+        factory = PeerProtocolFactory(client)
         reactor.connectTCP(self.ip, self.port, factory)
 
 
@@ -54,7 +54,7 @@ class PeerProtocol(Protocol):
     def __init__(self):
         self._buffer = ''
         self.shook_hand = False
-        self.master_control = None
+        self.client = None
 
     def dataReceived(self, data):
         self._buffer += data
@@ -63,24 +63,24 @@ class PeerProtocol(Protocol):
             peer_handshake, self._buffer = parse_handshake(self._buffer)
             if peer_handshake:
                 # if successful, will set shook hands to true
-                if not self.master_control.is_valid_handshake(peer_handshake):
-                    self.master_control.handle_invalid_handshake(self)
+                if not self.client.is_valid_handshake(peer_handshake):
+                    self.client.handle_invalid_handshake(self)
                     return
 
-                self.master_control.handle_valid_handshake(self)
+                self.client.handle_valid_handshake(self)
 
                 # parse buffer for messages
                 msgs, self._buffer = parse_message(self._buffer)
-                self.master_control.handle_messages(self, msgs)
+                self.client.handle_messages(self, msgs)
 
         # parse buffer for messages
         else:
             msgs, self._buffer = parse_message(self._buffer)
-            self.master_control.handle_messages(self, msgs)
+            self.client.handle_messages(self, msgs)
 
     def connectionMade(self):
         print self.transport.getPeer()
-        self.master_control.handle_connection_made(self)
+        self.client.handle_connection_made(self)
 
     def connectionLost(self, reason):
         print "connection lost %r %s" % (self.transport.getPeer(), reason)
@@ -98,12 +98,12 @@ class PeerProtocol(Protocol):
 class PeerProtocolFactory(ClientFactory):
     protocol = PeerProtocol
 
-    def __init__(self, master_control):
-        self.master_control = master_control
+    def __init__(self, client):
+        self.client = client
 
     def buildProtocol(self, address):
         proto = ClientFactory.buildProtocol(self, address)
-        proto.master_control = self.master_control
+        proto.client = self.client
         return proto
 
 

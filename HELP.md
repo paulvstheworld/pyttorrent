@@ -31,5 +31,3 @@ Steps
 
 * client must fetch the list of peers from the tracker
 * connect to some (or all) of them via handshake
-
-

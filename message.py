@@ -18,10 +18,13 @@ ID_PORT = 9
 
 
 class Message(object):
-    def __init__(self, msg_len=0, id=None, payload=None):
+    def __init__(self, msg_len=0, id=None, payload=''):
         self.msg_len=msg_len
         self.id=id
         self.payload=payload
+    
+    def __str__(self):
+        return '%s%s%s' % (self.msg_len, self.id, self.payload,)
 
 
 def parse_message(buffer):
@@ -67,18 +70,19 @@ def get_message_id_and_payload(msg_body):
 
 def get_interested_message():
     # <len=0001><id=2>
-    length = BitArray(uint=1, length=32).bytes
+    msg_len = BitArray(uint=1, length=32).bytes
     id = chr(ID_INTERESTED)
     
-    msg = '%s%s' % (length, id)
-    return msg
-    
+    return Message(msg_len=msg_len, id=id)
+
+
 def get_request_piece_message(piece_index, begin, requested_length):
     # <len=0013><id=6><index><begin><length>
-    length = BitArray(uint=13, length=32).bytes
+    msg_len = BitArray(uint=13, length=32).bytes
     id = chr(ID_REQUEST)
     index = BitArray(uint=piece_index, length=32).bytes
     begin = BitArray(uint=begin, length=32).bytes # block offset
     requested_length = BitArray(uint=requested_length, length=32).bytes # block offset
+    payload = '%s%s%s' % (index, begin, requested_length)
     
-    return '%s%s%s%s%s' % (length, id, index, begin, requested_length)
+    return Message(msg_len=msg_len, id=id, payload=payload)

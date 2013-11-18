@@ -6,7 +6,6 @@ import argparse
 from twisted.internet import reactor
 
 from client import BitTorrentClient
-from master_control import MasterControl
 from torrentfile import TorrentFile
 from tracker import Tracker
 
@@ -35,20 +34,21 @@ def parse_args():
 
 def main():
     file_location, download_dir = parse_args()
+    
+    # parse the torrent file and make into an object
     torrentfile = TorrentFile(file_location)
 
-    client = BitTorrentClient(download_dir)
-    client.create_file(torrentfile)
+    # create bittorrent client (brain behind everything)
+    client = BitTorrentClient(download_dir, torrentfile)
+    client.create_files()
 
-    # move this client
-    master_control = MasterControl(client.peer_id, download_dir, torrentfile)
-
+    # create tracker and add it to the client
     tracker = Tracker(client.peer_id, torrentfile)
-    tracker.get_peers_and_connect(client.peer_id, torrentfile, master_control)
+    client.add_tracker(tracker)
 
-    # give master control the tracker
-    # master_control.add_tracker(tracker)
-
+    # connect to the peers associated to the tracker
+    tracker.get_peers_and_connect(client, torrentfile)
+    
     reactor.run()
 
 

@@ -5,6 +5,7 @@ SIZE_RESERVED_BYTES = 8
 SIZE_INFO_HASH = 20
 SIZE_PEER_ID = 20
 HANDSHAKE_WITHOUT_PROTOCOL_LEN = 49
+SIZE_TOTAL_HANDSHAKE = 68
 
 class Handshake(object):
     def __init__(self, peer_id='',  
@@ -12,12 +13,17 @@ class Handshake(object):
             reserved='\x00\x00\x00\x00\x00\x00\x00\x00', 
             info_hash='', handshake_str=''):
         
-        # TODO do more checking
-        # check handshake size
-        # check if certain kwargs were received
-        if handshake_str:
-            pstrlen, pstr, reserved, info_hash, peer_id = self.explode(handshake_str)
-            
+        if not peer_id and not info_hash:
+            if not handshake_str:
+                raise Exception('Expected argument handshake_str.')
+            else:
+                if len(handshake_str) != SIZE_TOTAL_HANDSHAKE:
+                    raise Exception('Incorrect handshake size.')
+                pstrlen, pstr, reserved, info_hash, peer_id = self.explode(handshake_str)
+        
+        elif handshake_str:
+            raise Exception('Unexpected argument handshake_str.')
+        
         self.peer_id = peer_id
         self.pstrlen = len(pstr)
         self.pstr = pstr

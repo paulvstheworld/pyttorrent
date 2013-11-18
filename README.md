@@ -4,12 +4,18 @@ torrentpy
 BitTorrent client written in Python
 
 
-TODO
+TODOs
 ----
-* Try Multiple files
-* Try downloading large files i.e. Linux ISO
-* Look into hash collisions
-* Change up MasterControl to Client
 * Send multiple requests to a peer (pipelining)
-* Have master control take care of
-* Use the Message class to create INTERESTED and PIECE request
+
+* Multi-file torrent
+	* Parse file structure
+	* Create files based on described file structure
+	* Write to multiple files
+	* Check info hash that span across multiple files 
+
+* Large files
+	* Request small block sizes (w/ offsets)
+
+
+
