@@ -10,7 +10,7 @@ from torrentfile import TorrentFile
 from tracker import Tracker
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Download a small single file via BitTorrent protocol')
     parser.add_argument('-f', '--file',
                         required=True,
                         dest = 'file',
