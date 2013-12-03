@@ -23,6 +23,8 @@ The path to the torrent file (-f/--file) and the path to the download directory 
 
     python main.py -f <path/to/torrent/file> -d <path/to/download/directory>
 
+OR
+
     python main.py --file=<path/to/torrent/file> --dir=<path/to/download/directory>
 
 Hang back while the torrent downloads.
