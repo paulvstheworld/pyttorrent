@@ -1,9 +1,6 @@
 # pyttorrent 
 "pit-torrent"
 
-
-ABOUT
-----
 BitTorrent client written in Python using the Twisted framework.
 
 For now, it deals with single file torrents...but stay tuned!
