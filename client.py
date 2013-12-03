@@ -111,6 +111,7 @@ class BitTorrentClient(object):
     ######### HANDSHAKE UTILITY METHODS #########
 
     def is_valid_handshake(self, peer_handshake):
+        # TODO - be more explicity about checking for a valid handshake
         return self.torrentfile.info_hash == peer_handshake.info_hash
 
 
@@ -121,8 +122,12 @@ class BitTorrentClient(object):
 
 
     def handle_valid_handshake(self, peer_protocol):
+        peer_connection = self.get_peer_connection(peer_protocol)
         peer_protocol.handshake_received()
 
+        # send interested
+        self.send_INTERESTED(peer_protocol)
+        peer_connection.interested_sent = True
 
 
     ######### MESSAGE HANDLERS #########
@@ -189,10 +194,6 @@ class BitTorrentClient(object):
     def handle_BITFIELD(self, peer_protocol, msg_payload):
         peer_connection = self.get_peer_connection(peer_protocol)
         peer_connection.bitfield = BitArray(bytes=msg_payload)
-
-        # send interested
-        self.send_INTERESTED(peer_protocol)
-        peer_connection.interested_sent = True
 
 
     def handle_REQUEST(self, peer_protocol, msg_payload):

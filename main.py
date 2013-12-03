@@ -9,7 +9,7 @@ from client import BitTorrentClient
 from torrentfile import TorrentFile
 from tracker import Tracker
 
-def parse_args():
+def get_args():
     parser = argparse.ArgumentParser(description='Download a small single file via BitTorrent protocol')
     parser.add_argument('-f', '--file',
                         required=True,
@@ -33,7 +33,7 @@ def parse_args():
 
 
 def main():
-    file_location, download_dir = parse_args()
+    file_location, download_dir = get_args()
     
     # parse the torrent file and make into an object
     torrentfile = TorrentFile(file_location)

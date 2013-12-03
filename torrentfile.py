@@ -5,7 +5,7 @@ from bencode import bdecode, bencode
 
 class TorrentFile(object):
     def __init__(self, file_path):
-        f = open(file_path, 'r+b') # read file in binary mode
+        f = open(file_path, 'r') # read .torrent file in binary mode
         decoded_torrent_file = bdecode(f.read())
 
         self.file_path = file_path
