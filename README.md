@@ -19,6 +19,7 @@ Use pip to install requirements (virtualenv recommended).
 RUN
 ----
 You want to run the main.py file with (2) arguments.
+
 The path to the torrent file (-f/--file) and the path to the download directory (-d/--dir)
 
     python main.py -f <path/to/torrent/file> -d <path/to/download/directory>
