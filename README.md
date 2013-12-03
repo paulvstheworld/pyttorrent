@@ -16,7 +16,12 @@ INSTALL
 Use pip to install requirements (virtualenv recommended)
 
     pip install -r requirement.txt
-        
+
+
+
+
+RUN
+----
 Run the BitTorrent client
 
     python main.py -f <path/to/torrent/file> -d <path/to/download/directory>
